@@ -72,11 +72,15 @@ class PayU:
     def build_order(self, order):
         order['accountId'] = self.config['ACCOUNT_ID']
         order['signature'] = self.build_signature(order)
+        value = order.pop('value', None)
+        currency = order.pop('currency', None)
+        if 'language' not in order:
+            order['language'] = self.config['LANG']
         if 'additionalValues' not in order:
             order['additionalValues'] = {
                 'TX_VALUE': {
-                    'value': order.get('value'),
-                    'currency': order.get('currency')
+                    'value': value,
+                    'currency': currency
                 }
             }
 
@@ -91,8 +95,8 @@ class PayU:
             cc = kwargs.get('credit_card')
             self.validate_cc(cc)
             t['creditCard'] = cc
-        elif 'credid_card_token' in kwargs:
-            t['creditCardTokenId'] = kwargs.get('credit_card_token')
+        elif 'credit_card_token' in kwargs:
+            t['creditCardTokenId'] = kwargs.pop('credit_card_token')
 
         if 'type' not in 'kwargs':
             t['type'] = 'AUTHORIZATION_AND_CAPTURE'
@@ -101,9 +105,15 @@ class PayU:
         # TODO: Support multiple orders in one transaction
         t['order'] = order
 
-        t.update(kwargs)
+        t.update(kwargs.get('additional_data'))
         return t
 
+
+    def submit_transaction(self, transaction):
+        cmd = 'SUBMIT_TRANSACTION'
+        request_data = self.build_request_base(cmd)
+        request_data['transaction'] = transaction
+        return self.post(request_data)
 
     def validate(self, data, fields=[]):
         errors = []

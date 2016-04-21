@@ -105,10 +105,11 @@ class PayUTestCase(unittest.TestCase):
         assert order['signature'] == '1811d58e896b1c89a9332ac0951f10ea'
         assert order['additionalValues']['TX_VALUE']['value'] == '1000'
         assert order['additionalValues']['TX_VALUE']['currency'] == 'COP'
+        assert order['language'] == 'es'
 
     def test_build_transaction(self):
-
         payu = self._make_one()
+
         ref = 'payment_test_80k9j1n7dg'
         order_data = {
             'referenceCode': ref,
@@ -126,12 +127,12 @@ class PayUTestCase(unittest.TestCase):
             "expirationDate": "2017/01"
         }
         cc_token = payu.tokenize(cc_data)
-
+        token = cc_token.json()['creditCardToken']['creditCardTokenId']
         transaction = payu.build_transaction(
             order=order,
             payment_method='VISA',
             payment_country='CO',
-            credit_card_token = cc_token,
+            credit_card_token = token,
             additional_data = {
                 "deviceSessionId": "vghs6tvkcle931686k1900o6e1",
                 "ipAddress": "127.0.0.1",
@@ -164,3 +165,29 @@ class PayUTestCase(unittest.TestCase):
         }
 
         assert expected_result == transaction
+
+
+    def test_submit_transaction(self):
+        payu = self._make_one()
+
+        ref = generate_reference_code()
+        order_data = {
+            'referenceCode': ref,
+            'value': '1000',
+            'currency': 'COP',
+            'description': "payment test"
+        }
+        transaction = payu.build_transaction(
+            order=payu.build_order(order_data),
+            payment_method='VISA',
+            payment_country='CO',
+            credit_card_token = 'ef2d19b7-18e4-4406-aaa1-acfb6a57967a',
+            additional_data = {
+                "deviceSessionId": "vghs6tvkcle931686k1900o6e1",
+                "ipAddress": "127.0.0.1",
+                "cookie": "pt1t38347bs6jc9ruv2ecpv7o2",
+                "userAgent": "Mozilla/5.0 (Windows NT 5.1; rv:18.0) Gecko/20100101 Firefox/18.0"
+            })
+
+        resp = payu.submit_transaction(transaction)
+        assert resp.json()['code'] == 'SUCCESS'
