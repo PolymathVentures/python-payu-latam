@@ -115,6 +115,14 @@ class PayU:
         request_data['transaction'] = transaction
         return self.post(request_data)
 
+    def query_transaction(self, reference_code):
+        cmd = 'ORDER_DETAIL_BY_REFERENCE_CODE'
+        request_data = self.build_request_base(cmd)
+        request_data['details'] = {
+            'referenceCode': reference_code
+        }
+        return self.post(request_data, url='QUERY_URL')
+
     def validate(self, data, fields=[]):
         errors = []
         for field in fields:

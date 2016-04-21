@@ -191,3 +191,10 @@ class PayUTestCase(unittest.TestCase):
 
         resp = payu.submit_transaction(transaction)
         assert resp.json()['code'] == 'SUCCESS'
+
+
+    def test_query_transaction(self):
+        payu = self._make_one()
+
+        resp = payu.query_transaction('payment_test_80k9j1n7dg')
+        assert resp.json()['result']['payload'][0]['status'] == 'CANCELLED'
