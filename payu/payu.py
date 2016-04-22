@@ -1,6 +1,7 @@
 from hashlib import md5
 from functools import partialmethod
 import requests
+from payu.helpers import clean_cc_number
 
 class ImproperlyConfigured(Exception):
     pass
@@ -45,7 +46,7 @@ class PayU:
     def build_signature(self, order, sep='~', algorithm='md5'):
         self.validate_signature(order)
         ref = order.get('referenceCode')
-        value = order.get('value')
+        value = str(order.get('value'))
         currency = order.get('currency')
         msg = sep.join([self.config['API_KEY'],
                         self.config['MERCHANT_ID'],
@@ -64,6 +65,7 @@ class PayU:
 
     def tokenize(self, cc_data):
         self.validate_cc(cc_data)
+        cc_data['number'] = clean_cc_number(cc_data['number'])
         cmd = 'CREATE_TOKEN'
         request_data = self.build_request_base(cmd)
         request_data['creditCardToken'] = cc_data
